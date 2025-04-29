@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { ChevronDown } from 'lucide-react';
 import Accordion, { AccordionItem } from '../ui/accordion/Accordion';
@@ -20,8 +19,11 @@ const availableFeatures: { id: string; name: string }[] = [
 const roleTypes = Object.values(RoleType);
 
 const AddNewRole: React.FC = () => {
-  // Active step (1, 2, or 3)
+  // Active step (1, 2, or 3) - still used for validation and highlighting
   const [activeStep, setActiveStep] = useState(1);
+  
+  // Track which accordion items are open
+  const [openSections, setOpenSections] = useState<number[]>([0]);
   
   // Form state for Role Creation step
   const [roleName, setRoleName] = useState('');
@@ -82,6 +84,19 @@ const AddNewRole: React.FC = () => {
     );
   };
 
+  // Toggle accordion section
+  const handleToggleSection = (sectionIndex: number) => {
+    setOpenSections(prev => {
+      if (prev.includes(sectionIndex)) {
+        // If already open, keep it open
+        return prev;
+      } else {
+        // Add this section to open sections
+        return [...prev, sectionIndex];
+      }
+    });
+  };
+
   // Next step handler
   const handleNext = () => {
     if (activeStep === 1) {
@@ -91,6 +106,10 @@ const AddNewRole: React.FC = () => {
       }
       
       setActiveStep(2);
+      // Ensure Feature Access section is open
+      if (!openSections.includes(1)) {
+        setOpenSections(prev => [...prev, 1]);
+      }
     } else if (activeStep === 2) {
       const selectedFeatures = features.filter(f => f.selected);
       if (selectedFeatures.length === 0) {
@@ -99,6 +118,10 @@ const AddNewRole: React.FC = () => {
       }
       
       setActiveStep(3);
+      // Ensure Privilege Rights section is open
+      if (!openSections.includes(2)) {
+        setOpenSections(prev => [...prev, 2]);
+      }
     }
   };
 
@@ -135,6 +158,7 @@ const AddNewRole: React.FC = () => {
         alerts: false
       })));
       setActiveStep(1);
+      setOpenSections([0]);
     } catch (error) {
       console.error('Failed to create role:', error);
       toast.error('Failed to create role');
@@ -143,10 +167,11 @@ const AddNewRole: React.FC = () => {
 
   return (
     <div>
-      <Accordion>
+      <Accordion allowMultiple>
         <AccordionItem 
           title="Role Creation" 
-          isOpen={activeStep === 1}
+          isOpen={openSections.includes(0)}
+          onToggle={() => handleToggleSection(0)}
         >
           <div className="mb-4">
             <p className="text-gray-600 mb-6">Select features to create roles</p>
@@ -211,7 +236,8 @@ const AddNewRole: React.FC = () => {
         
         <AccordionItem 
           title="Feature Access" 
-          isOpen={activeStep === 2}
+          isOpen={openSections.includes(1)}
+          onToggle={() => handleToggleSection(1)}
         >
           <div>
             <p className="text-gray-600 mb-6">Select features to assign per user role</p>
@@ -259,7 +285,8 @@ const AddNewRole: React.FC = () => {
         
         <AccordionItem 
           title="Privilege Rights" 
-          isOpen={activeStep === 3}
+          isOpen={openSections.includes(2)}
+          onToggle={() => handleToggleSection(2)}
         >
           <div>
             <p className="text-gray-600 mb-6">Select access type per feature for this role</p>
